@@ -12,6 +12,7 @@ ApplicationWindow{
     Settings {
         id: settings
         property list<string> savedCommands: ["/system/bin/ls -lh"]
+        property list<string> envs: ["ISQTERM=1"]
     }
 
     QLog{
@@ -26,6 +27,7 @@ ApplicationWindow{
             qlog: ql
             title: "Commands"
             commands: settings.savedCommands
+            environments: settings.envs
         }
 
         QTerm{

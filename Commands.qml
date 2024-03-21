@@ -6,7 +6,9 @@ import Terminal
 ScrollablePage {
     id: scrollView
     required property list<string> commands
+    required property list<string> environments
     required property QLog qlog
+    property bool envVisible: false
     Column{
         anchors.centerIn: parent
         spacing: 10
@@ -24,8 +26,8 @@ ScrollablePage {
                     id: textArea
                     text: commands[index]
                     wrapMode: Text.WrapAnywhere
-                    readOnly: true
                     width: parent.width
+                    enabled: false
                 }
                 Row{
                     anchors.bottom: parent.bottom
@@ -35,9 +37,8 @@ ScrollablePage {
                         text: "\u2713"
                         radius: height/2
                         onClicked: {
-                            qlog.execute(commands[index])
+                            qlog.execute(commands[index], settings.envs)
                             qlog.line = "Execute: " + commands[index]
-                            bkill.enabled = false
                         }
                     }
                     RoundButton {
@@ -74,17 +75,13 @@ ScrollablePage {
                 text: "Stop"
                 onClicked: {
                     qlog.stop()
-                    bkill.enabled = true
                 }
             }
 
-            Button {
-                id: bkill
-                enabled: false
-                text: "Kill"
+            Button{
+                text: "Debug"
                 onClicked: {
-                    qlog.kill()
-                    bkill.enabled = false
+                    qlog.debug()
                 }
             }
         }
@@ -132,6 +129,73 @@ ScrollablePage {
                         return
                     }
                     qlog.install(tsel.text, tcmd.text)
+                }
+            }
+        }
+
+        RowLayout{
+            width: parent.width
+            Switch {
+                id: editEnv
+                text: "EditEnv"
+                checked: envVisible
+                Layout.alignment: Qt.AlignRight
+                onToggled: {
+                    envVisible = editEnv.checked
+                }
+            }
+        }
+
+        // environments
+        Repeater{
+            id: envView
+            model: environments.length
+            width: parent.width
+
+            delegate: Item{
+                visible: envVisible
+                height: tKey.height
+                width: parent.width
+                TextArea {
+                    id: tKey
+                    text: environments[index]
+                    wrapMode: Text.WrapAnywhere
+                    width: parent.width
+                    enabled: false
+                }
+                Row{
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    spacing: 5
+                    RoundButton {
+                        text: "-"
+                        radius: height/2
+                        onClicked: {
+                            textField.text = environments[index]
+                            settings.envs.splice(index, 1)
+                        }
+                    }
+                }
+            }
+        }
+
+        TextField{
+            id: tenv
+            visible: envVisible
+            width: parent.width
+            wrapMode: Text.WrapAnywhere
+            placeholderText: "Environment"
+        }
+
+        Row{
+            id: redit
+            visible: envVisible
+            anchors.right: parent.right
+            spacing: 10
+            Button {
+                text: "Add"
+                onClicked: {
+                    settings.envs.push(tenv.text)
                 }
             }
         }

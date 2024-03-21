@@ -5,8 +5,8 @@
 #include <QtCore/private/qandroidextras_p.h>
 
 
-static QJniObject activity = QtAndroidPrivate::activity();
-static QJniObject context = QtAndroidPrivate::context();
+QJniObject activity = QtAndroidPrivate::activity();
+QJniObject context = QtAndroidPrivate::context();
 static QString packageName = context.callObjectMethod(
        "getPackageName", "()Ljava/lang/String;").toString();
 static QJniObject package = context.callObjectMethod(
@@ -21,24 +21,40 @@ QJniObject getSystemService(const QString &name) {
 }
 
 
-QJniObject wakeLock;
-
-void acquireWakeLock() {
-    if (!wakeLock.isValid()) {
-        auto powerManager = getSystemService("POWER_SERVICE");
-        wakeLock = powerManager.callObjectMethod(
-            "newWakeLock",
-            "(ILjava/lang/String;)Landroid/os/PowerManager$WakeLock;",
-            1, // PowerManager.PARTIAL_WAKE_LOCK
-            QJniObject::fromString(packageName+":wake").object());
-    }
-    if (wakeLock.isValid())
-        wakeLock.callObjectMethod("acquire", "()V");
+QJniObject startService(const QString& srvName){
+    QAndroidIntent serviceIntent(
+        activity.object(),
+        srvName.toStdString().c_str());
+    return activity.callObjectMethod(
+        "startService",
+        "(Landroid/content/Intent;)Landroid/content/ComponentName;",
+        serviceIntent.handle().object());
 }
 
-void releaseWakeLock(){
-    if (wakeLock.isValid())
-        wakeLock.callObjectMethod("release", "()V");
+QJniObject stopService(const QString& srvName){
+    QAndroidIntent serviceIntent(
+        activity.object(),
+        srvName.toStdString().c_str());
+    // return bool
+    activity.callMethod<jboolean>(
+        "stopService",
+        "(Landroid/content/Intent;)Z",
+        serviceIntent.handle().object());
+    return QJniObject();
+}
+
+void notify(const QString &title, const QString &message)
+{
+    QJniObject javaNotification = QJniObject::fromString(message);
+    QJniObject javaTitle = QJniObject::fromString(title);
+    QJniObject::callStaticMethod<void>(
+        "org/qtproject/example/QNotification",
+        "notify",
+        "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V",
+        context,
+        // QNativeInterface::QAndroidApplication::context(),
+        javaTitle.object<jstring>(),
+        javaNotification.object<jstring>());
 }
 
 QString invoke(

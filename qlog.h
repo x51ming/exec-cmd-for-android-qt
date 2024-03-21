@@ -5,6 +5,8 @@
 #include <QQuickItem>
 #include <QProcess>
 #include <QJniObject>
+#include <QFile>
+#include <QTimer>
 
 class QLog : public QQuickItem
 {
@@ -27,13 +29,15 @@ public:
                              const QString& target);
     Q_INVOKABLE void notify(const QString& title,
                             const QString& message);
+    Q_INVOKABLE void debug();
 
 private:
-    void connectProcess();
-    QProcess *m_process;
     QString m_line;
     QString wd;
-    qint64 m_pid;
+    QFile logfile;
+    QFile errfile;
+    QTimer timer;
+
 signals:
     void lineChanged();
 };
